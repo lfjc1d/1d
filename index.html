@@ -251,7 +251,7 @@ button:focus {
 
 #submitBtn {
   background: linear-gradient(145deg, #c8b88a, #b49e60);
-  display: none; /* ADDED: Hidden initially */
+  display: none;
 }
 
 
@@ -1690,7 +1690,7 @@ body.anti-sleep-active {
   <div id="reviewQuestionsContainer"></div>
   
   <div style="text-align:center; margin:30px 0;">
-    <button id="closeReviewBtn" class="navBtn" style="background:linear-gradient(145deg, #dc3545, #c82333;">Close</button>
+    <button id="closeReviewBtn" class="navBtn" style="background:linear-gradient(145deg, #dc3545, #c82333);">Close</button>
   </div>
 </div>
 
@@ -1734,7 +1734,7 @@ let EXAM_SETUP = {
         { name: "MATHS_A", questions: 30, numerical: 0 },
         { name: "PHYSICS", questions: 30, numerical: 0 }
     ],
-    duration: 12, // minutes
+    duration: 120, // minutes
     activeForForms: ["MATHS_A", "PHYSICS"],
     correctMark: 1,
     wrongMark: 0
@@ -2442,12 +2442,9 @@ class SystemTrayViolationDetector {
         
         if (this.violationCount >= this.maxViolations) {
             console.log('🚨 3 system tray violations detected - saving violation flag!');
-            // Store violation flag in localStorage instead of auto-submitting
-            sessionStorage.setItem('hasViolations', 'true');
-            localStorage.setItem('violationCount', this.violationCount);
-            localStorage.setItem('violationType', violationType);
-            localStorage.setItem('violationTimestamp', Date.now());
+            localStorage.setItem('hasViolations', 'true');
             
+            // Keep auto-submit functionality
             this.showViolationOverlay(`
                 🚨 EXAM VIOLATION DETECTED
                 <br><br>
@@ -2455,20 +2452,22 @@ class SystemTrayViolationDetector {
                 <br><br>
                 <strong>3 system tray violations reached!</strong>
                 <br>
-                The submit button will be available when you re-enter the exam.
+                Submitting exam in 3 seconds...
             `, 'red');
             
-            // Show submit button only when user re-enters
-            // The updateSubmitButtonVisibility function will check sessionStorage on re-entry
-            showToast('🚨 3 violations detected! Submit button available on re-entry.', 'error', 5000);
+            setTimeout(() => {
+                if (examInProgress) {
+                    submitExam();
+                }
+            }, 3000);
         }
     }
     
     showWarning(count, violationType) {
         const messages = [
             `⚠️ System Access: ${violationType} (1/${this.maxViolations})`,
-            `⚠️ System Access: ${violationType} (2/${this.maxViolations}) - One more violation will show submit button on re-entry!`,
-            `🚨 3 system tray violations detected! ${violationType} - Submit button available on re-entry.`
+            `⚠️ System Access: ${violationType} (2/${this.maxViolations}) - One more violation will auto-submit!`,
+            `🚨 3 system tray violations detected! ${violationType} - Auto-submitting exam...`
         ];
         
         const messageIndex = Math.min(count - 1, 2);
@@ -2483,7 +2482,7 @@ class SystemTrayViolationDetector {
                 <strong>Count: ${count}/${this.maxViolations}</strong>
                 <br>
                 Accessing system tray, taskbar, or Windows shortcuts is prohibited!
-                ${count >= 3 ? 'Submit button will appear on re-entry.' : ''}
+                ${count >= 3 ? 'Auto-submitting exam...' : ''}
             `, 'orange');
         }
     }
@@ -2526,7 +2525,7 @@ class SystemTrayViolationDetector {
                     overlay.parentNode.removeChild(overlay);
                 }
             }, 500);
-        }, 8000);
+        }, 5000);
     }
     
     reset() {
@@ -2863,10 +2862,10 @@ function createAutoSaveIndicator() {
 function setupPowerLossEventListeners() {
     window.addEventListener('online', () => {
         updateConnectionStatus(true);
-        sessionStorage.setItem('wasOffline', 'true'); // ADDED: Set offline flag
+        sessionStorage.setItem('wasOffline', 'true');
         showToast('✅ Internet connection restored', 'success', 3000);
         syncPendingSubmissions();
-        updateSubmitButtonVisibility(); // ADDED: Check if we need to show the button
+        updateSubmitButtonVisibility();
     });
     
     window.addEventListener('offline', () => {
@@ -3057,7 +3056,7 @@ function showPowerLossRecoveryDialog(progressData, lastSaveTime) {
 function resumeFromPowerLoss(progressData) {
     console.log('🔄 Resuming exam from power loss recovery...');
     
-    sessionStorage.setItem('wasPowerLost', 'true'); // ADDED: Set power loss flag
+    sessionStorage.setItem('wasPowerLost', 'true');
     
     document.getElementById('powerLossRecoveryOverlay').style.display = 'none';
     document.getElementById('accessDenied').style.display = 'none';
@@ -3109,7 +3108,7 @@ function startExamWithRecovery(progressData) {
     startTimer();
     updateNavButtons();
     
-    updateSubmitButtonVisibility(); // ADDED: Update submit button visibility after recovery
+    updateSubmitButtonVisibility();
     
     keepAwakeSystem.start();
     
@@ -3270,9 +3269,9 @@ function showTabSwitchWarning(count) {
     if (count === 1) {
         message = '⚠️ Warning: Tab switching detected (1/3).';
     } else if (count === 2) {
-        message = '⚠️ Warning: Tab switching detected (2/3). One more switch will show submit button on re-entry!';
+        message = '⚠️ Warning: Tab switching detected (2/3). One more switch will auto-submit exam!';
     } else if (count >= 3) {
-        message = '🚨 3 tab switches detected! Submit button will appear on re-entry.';
+        message = '🚨 3 tab switches detected! Auto-submitting exam in 3 seconds...';
     }
     
     const warningDiv = document.createElement('div');
@@ -3312,10 +3311,13 @@ function showTabSwitchWarning(count) {
     }
     
     if (count >= 3) {
-        showToast('🚨 3 tab switches detected! Submit button available on re-entry.', 'error', 3000);
-        sessionStorage.setItem('hasViolations', 'true');
-        localStorage.setItem('tabViolationCount', count);
-        localStorage.setItem('tabViolationTimestamp', Date.now());
+        localStorage.setItem('hasViolations', 'true');
+        showToast('🚨 3 tab switches detected! Auto-submitting exam in 3 seconds.', 'error', 3000);
+        setTimeout(() => {
+            if (examInProgress) {
+                submitExam();
+            }
+        }, 3000);
     }
 }
 
@@ -3520,14 +3522,6 @@ document.addEventListener('visibilitychange', function() {
         
         if (currentTime - lastTabSwitchTime > 2000) {
             systemTrayDetector.handleViolation('Possible system tray/taskbar click');
-        }
-        
-        if (tabSwitchCount >= 3) {
-            console.log('🚨 3 tab switches detected - saving violation flag!');
-            sessionStorage.setItem('hasViolations', 'true');
-            localStorage.setItem('tabViolationCount', tabSwitchCount);
-            localStorage.setItem('tabViolationTimestamp', Date.now());
-            showToast('🚨 3 tab switches detected! Submit button available on re-entry.', 'error', 5000);
         }
     }
 });
@@ -4053,7 +4047,14 @@ function startExam(studentKey) {
     startTimer(); 
     updateNavButtons();
     
-    updateSubmitButtonVisibility(); // ADDED: Hide submit button initially unless conditions are met
+    // Check if student has previous violations and show submit button
+    const hasViolations = localStorage.getItem('hasViolations') === 'true';
+    if (hasViolations) {
+        document.getElementById('submitBtn').style.display = 'inline-block';
+        showToast('⚠️ Previous violations detected. Submit button is available.', 'warning', 5000);
+    } else {
+        updateSubmitButtonVisibility();
+    }
     
     systemTrayDetector.enable();
     
@@ -4238,21 +4239,12 @@ function updateSubmitButtonVisibility() {
     
     const wasOffline = sessionStorage.getItem('wasOffline') === 'true';
     const wasPowerLost = sessionStorage.getItem('wasPowerLost') === 'true';
-    const hasViolations = sessionStorage.getItem('hasViolations') === 'true';
+    const hasViolations = localStorage.getItem('hasViolations') === 'true';
     
-    // Check localStorage for violations from previous sessions
-    const storedViolations = localStorage.getItem('violationCount');
-    const storedTabViolations = localStorage.getItem('tabViolationCount');
-    const hasStoredViolations = (storedViolations && parseInt(storedViolations) >= 3) || 
-                                (storedTabViolations && parseInt(storedTabViolations) >= 3);
-    
-    if (isLessThan10Min || wasOffline || wasPowerLost || hasViolations || hasStoredViolations) {
+    if (isLessThan10Min || wasOffline || wasPowerLost || hasViolations) {
         submitBtn.style.display = 'inline-block';
-        // Clear flags after showing
         if (wasOffline) sessionStorage.removeItem('wasOffline');
         if (wasPowerLost) sessionStorage.removeItem('wasPowerLost');
-        if (hasViolations) sessionStorage.removeItem('hasViolations');
-        // Don't clear localStorage violations as they persist for the session
     } else {
         submitBtn.style.display = 'none';
     }
@@ -4269,7 +4261,7 @@ function startTimer() {
     
     timerEl.textContent = `🕒 ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     
-    updateSubmitButtonVisibility(); // ADDED: Check if we need to show the submit button
+    updateSubmitButtonVisibility();
     
     if (progress.timeLeftSec <= 300) timerEl.classList.add('blink');
     
@@ -4505,6 +4497,8 @@ for (let subject of activeSubjects) {
         console.log("✅ Google Forms submission completed");
         showToast('✅ Exam submitted successfully!', 'success', 5000);
         
+        // Clear violation flag on successful submission
+        localStorage.removeItem('hasViolations');
         clearSavedExam();
         return true;
     } catch (error) {
@@ -4963,8 +4957,8 @@ window.addEventListener('load', function() {
     }
   });
   console.log('🔒 Full-Screen Security Active');
-  console.log('📊 Tab Switching Detection: 3 switches trigger submit button on re-entry');
-  console.log('🔒 System Tray & Search Bar Detection: 3 violations trigger submit button on re-entry');
+  console.log('📊 Tab Switching Detection: 3 switches auto-submit');
+  console.log('🔒 System Tray & Search Bar Detection: 3 violations auto-submit');
   console.log('⚡ POWER LOSS PROTECTION: Auto-save every 15 seconds');
   console.log('📤 GOOGLE FORMS SUBMISSION: Enabled');
   console.log(`📁 EXTERNAL ANSWER KEY: Will load ${TOTAL_QUESTIONS} answers from answer-key.txt`);
