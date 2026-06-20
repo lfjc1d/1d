@@ -4003,19 +4003,18 @@ function startWithSecurity(ok) {
 }
 
 function startExam(studentKey) {
-    // Check if student had previous violations
-    const hasViolations = localStorage.getItem('hasViolations') === 'true';
-    
-    if (hasViolations) {
-        // Clear submitted flag so student can start fresh exam
-        hasSubmitted = false;
-        // Don't clear hasViolations yet - we need it to show the button
-        console.log('🔄 Previous violations detected. Starting fresh exam with submit button visible.');
-    }
-    
     if (!keyLoaded) {
         alert('Answer key not loaded. Contact admin.');
         return;
+    }
+
+    // Check if student had previous violations
+    const hasViolations = localStorage.getItem('hasViolations') === 'true';
+    
+    // If violations exist, reset the submitted flag so they can start fresh
+    if (hasViolations) {
+        hasSubmitted = false;
+        console.log('🔄 Previous violations detected. Starting fresh exam with submit button visible.');
     }
 
     const stuName = document.getElementById('stuName');
@@ -4060,8 +4059,8 @@ function startExam(studentKey) {
     if (hasViolations) {
         document.getElementById('submitBtn').style.display = 'inline-block';
         showToast('⚠️ Previous violations detected. Submit button is available.', 'warning', 5000);
-        // Clear the flag after showing the button on re-entry
-        // localStorage.removeItem('hasViolations');
+        // Clear the flag after showing the button
+        localStorage.removeItem('hasViolations');
     } else {
         updateSubmitButtonVisibility();
     }
