@@ -1734,7 +1734,7 @@ let EXAM_SETUP = {
         { name: "MATHS_A", questions: 30, numerical: 0 },
         { name: "PHYSICS", questions: 30, numerical: 0 }
     ],
-    duration: 120, // minutes
+    duration: 11, // minutes
     activeForForms: ["MATHS_A", "PHYSICS"],
     correctMark: 1,
     wrongMark: 0
@@ -2444,7 +2444,6 @@ class SystemTrayViolationDetector {
             console.log('🚨 3 system tray violations detected - saving violation flag!');
             localStorage.setItem('hasViolations', 'true');
             
-            // Keep auto-submit functionality
             this.showViolationOverlay(`
                 🚨 EXAM VIOLATION DETECTED
                 <br><br>
@@ -4004,6 +4003,16 @@ function startWithSecurity(ok) {
 }
 
 function startExam(studentKey) {
+    // Check if student had previous violations
+    const hasViolations = localStorage.getItem('hasViolations') === 'true';
+    
+    if (hasViolations) {
+        // Clear submitted flag so student can start fresh exam
+        hasSubmitted = false;
+        // Don't clear hasViolations yet - we need it to show the button
+        console.log('🔄 Previous violations detected. Starting fresh exam with submit button visible.');
+    }
+    
     if (!keyLoaded) {
         alert('Answer key not loaded. Contact admin.');
         return;
@@ -4047,11 +4056,12 @@ function startExam(studentKey) {
     startTimer(); 
     updateNavButtons();
     
-    // Check if student has previous violations and show submit button
-    const hasViolations = localStorage.getItem('hasViolations') === 'true';
+    // If student had violations, show submit button immediately
     if (hasViolations) {
         document.getElementById('submitBtn').style.display = 'inline-block';
         showToast('⚠️ Previous violations detected. Submit button is available.', 'warning', 5000);
+        // Clear the flag after showing the button on re-entry
+        // localStorage.removeItem('hasViolations');
     } else {
         updateSubmitButtonVisibility();
     }
