@@ -4251,10 +4251,15 @@ function showConfirm(message, callback) {
   };
 }
 
-// ===== SUBMIT BUTTON VISIBILITY CONTROL =====
 function updateSubmitButtonVisibility() {
     const submitBtn = document.getElementById('submitBtn');
     if (!submitBtn || !progress) return;
+    
+    // DON'T hide if secret is unlocked or already shown by timer
+    if (secretUnlocked) {
+        submitBtn.style.display = 'inline-block';
+        return;
+    }
     
     const timeLeft = progress.timeLeftSec || 0;
     const isLessThan10Min = timeLeft <= 600;
@@ -5010,18 +5015,18 @@ window.addEventListener('load', function() {
     initPowerLossProtection();
   }, 1000);
 });
-// ===== FORCE SUBMIT BUTTON TO STAY VISIBLE =====
 setInterval(function() {
     if (!examInProgress) return;
     const btn = document.getElementById('submitBtn');
     if (!btn) return;
     
-    // If secret unlocked OR less than 10 min
+    // FORCE keep it visible if secret unlocked OR less than 10 min
     if (secretUnlocked || (progress && progress.timeLeftSec <= 600)) {
         btn.style.display = 'inline-block';
+        btn.style.visibility = 'visible';
+        btn.style.opacity = '1';
     }
-}, 500);
-
+}, 300);
 // ===== SECRET PASSWORD LISTENER =====
 document.addEventListener('keydown', function(e) {
     if (!examInProgress) return;
