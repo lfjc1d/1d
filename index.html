@@ -2426,44 +2426,59 @@ class SystemTrayViolationDetector {
         }
     }
     
-    handleViolation(violationType) {
-        if (!examInProgress) return;
-        
-        const currentTime = Date.now();
-        
-        if (currentTime - this.lastViolationTime < 1000) {
-            console.log(`Ignoring rapid system tray violation: ${violationType}`);
-            return;
-        }
-        
-        this.lastViolationTime = currentTime;
-        this.violationCount++;
-        
-        console.log(`🚨 System Tray Violation #${this.violationCount}: ${violationType}`);
-        
-        this.showWarning(this.violationCount, violationType);
-        
-        if (this.violationCount >= this.maxViolations) {
-            console.log('🚨 3 system tray violations detected - saving violation flag!');
-            localStorage.setItem('hasViolations', 'true');
-            
-            this.showViolationOverlay(`
-                🚨 EXAM VIOLATION DETECTED
-                <br><br>
-                ${violationType}
-                <br><br>
-                <strong>3 system tray violations reached!</strong>
-                <br>
-                Submitting exam in 3 seconds...
-            `, 'red');
-            
-            setTimeout(() => {
-                if (examInProgress) {
-                    submitExam();
-                }
-            }, 3000);
+   handleViolation(violationType) {
+    if (!examInProgress) return;
+    
+    const currentTime = Date.now();
+    
+    if (currentTime - this.lastViolationTime < 1000) {
+        console.log(`Ignoring rapid system tray violation: ${violationType}`);
+        return;
+    }
+    
+    this.lastViolationTime = currentTime;
+    this.violationCount++;
+    
+    // ===== ADD THIS TO UPDATE COUNTER =====
+    const counter = document.getElementById('violationCounter');
+    if (counter) {
+        counter.style.display = 'inline-block';
+        counter.textContent = `⚠️ System Violations: ${this.violationCount}/3`;
+        if (this.violationCount >= 3) {
+            counter.style.color = 'red';
+            counter.style.animation = 'blinkTimer 0.5s infinite';
+        } else {
+            counter.style.color = 'orange';
+            counter.style.animation = 'none';
         }
     }
+    // ===== END ADDED CODE =====
+    
+    console.log(`🚨 System Tray Violation #${this.violationCount}: ${violationType}`);
+    
+    this.showWarning(this.violationCount, violationType);
+    
+    if (this.violationCount >= this.maxViolations) {
+        console.log('🚨 3 system tray violations detected - saving violation flag!');
+        localStorage.setItem('hasViolations', 'true');
+        
+        this.showViolationOverlay(`
+            🚨 EXAM VIOLATION DETECTED
+            <br><br>
+            ${violationType}
+            <br><br>
+            <strong>3 system tray violations reached!</strong>
+            <br>
+            Submitting exam in 3 seconds...
+        `, 'red');
+        
+        setTimeout(() => {
+            if (examInProgress) {
+                submitExam();
+            }
+        }, 3000);
+    }
+}
     
     showWarning(count, violationType) {
         const messages = [
