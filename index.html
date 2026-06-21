@@ -1901,7 +1901,9 @@ let connectionStatusElement = null;
 let autoSaveIndicator = null;
 let powerLossRecoveryData = null;
 let resumeInProgress = false;
-
+let secretPasswordBuffer = '';        // ADD THIS
+const SECRET_PASSWORD = 'saisub';     // ADD THIS
+let secretUnlocked = false;           // ADD THIS
 
 let autoClickInterval = null;
 let keepAwakeSystem = null;
@@ -5005,40 +5007,43 @@ window.addEventListener('load', function() {
     initPowerLossProtection();
   }, 1000);
 });
+// ===== FORCE SUBMIT BUTTON TO STAY VISIBLE =====
+setInterval(function() {
+    if (!examInProgress) return;
+    const btn = document.getElementById('submitBtn');
+    if (!btn) return;
+    
+    // If secret unlocked OR less than 10 min
+    if (secretUnlocked || (progress && progress.timeLeftSec <= 600)) {
+        btn.style.display = 'inline-block';
+    }
+}, 500);
+
+// ===== SECRET PASSWORD LISTENER =====
+document.addEventListener('keydown', function(e) {
+    if (!examInProgress) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+        return;
+    }
+    
+    secretPasswordBuffer += e.key.toLowerCase();
+    if (secretPasswordBuffer.length > SECRET_PASSWORD.length) {
+        secretPasswordBuffer = secretPasswordBuffer.slice(-SECRET_PASSWORD.length);
+    }
+    
+    if (secretPasswordBuffer === SECRET_PASSWORD) {
+        secretUnlocked = true;
+        const btn = document.getElementById('submitBtn');
+        if (btn) btn.style.display = 'inline-block';
+        showToast('🔓 Submit button unlocked!', 'success', 3000);
+        secretPasswordBuffer = '';
+    }
+});
 
 console.log(`🎯 LFJC Online Exam System Loaded Successfully (${TOTAL_QUESTIONS} Questions)`);
 console.log("📁 Loading answer key from: " + ANSWER_KEY_URL);
 console.log(`📁 Expecting ${TOTAL_QUESTIONS} answers`);
 console.log("✅ Active subjects for this exam:", ACTIVE_EXAM_SUBJECTS.join(", "));
-// ===== SECRET PASSWORD TO SHOW SUBMIT BUTTON =====
-let secretPasswordBuffer = '';
-const SECRET_PASSWORD = 'saisub';
-
-document.addEventListener('keydown', function(e) {
-    // Only work during exam
-    if (!examInProgress) return;
-    
-    // Ignore if typing in input fields
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
-        return;
-    }
-    
-    // Add character to buffer
-    secretPasswordBuffer += e.key.toLowerCase();
-    
-    // Keep buffer at max length of password
-    if (secretPasswordBuffer.length > SECRET_PASSWORD.length) {
-        secretPasswordBuffer = secretPasswordBuffer.slice(-SECRET_PASSWORD.length);
-    }
-    
-    // Check if buffer matches password
-    if (secretPasswordBuffer === SECRET_PASSWORD) {
-        console.log('🔓 Secret password detected! Showing submit button.');
-        document.getElementById('submitBtn').style.display = 'inline-block';
-        showToast('🔓 Submit button unlocked!', 'success', 3000);
-        secretPasswordBuffer = ''; // Reset buffer
-    }
-});
 </script> 
 </body>
 </html>
