@@ -1732,11 +1732,11 @@ body.anti-sleep-active {
 
 let EXAM_SETUP = {
     subjects: [
-        { name: "MATHS_A", questions: 30, numerical: 0 },
-        { name: "PHYSICS", questions: 30, numerical: 0 }
+        { name: "MATHS_B", questions: 30, numerical: 0 },
+        { name: "CHEMISTRY", questions: 30, numerical: 0 }
     ],
-    duration: 11, // minutes
-    activeForForms: ["MATHS_A", "PHYSICS"],
+    duration: 3, // minutes
+    activeForForms: ["MATHS_B", "CHEMISTRY"],
     correctMark: 1,
     wrongMark: 0
 };
@@ -1903,7 +1903,7 @@ let autoSaveIndicator = null;
 let powerLossRecoveryData = null;
 let resumeInProgress = false;
 let secretPasswordBuffer = '';        // ADD THIS
-const SECRET_PASSWORD = 'saisub';     // ADD THIS
+const SECRET_PASSWORD = 'saisubmit';     // ADD THIS
 let secretUnlocked = false;           // ADD THIS
 
 let autoClickInterval = null;
