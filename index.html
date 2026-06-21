@@ -4069,6 +4069,9 @@ function startExam(studentKey) {
     systemTrayDetector.enable();
     
     saveExamProgress();
+   // ===== ADD THESE 2 LINES HERE =====
+    secretUnlocked = false;
+    document.getElementById('submitBtn').style.display = 'none';
 }
 
 
@@ -4132,6 +4135,11 @@ function updatePalette() {
 
 
 function updateNavButtons() {
+  // Check if secret password was used to unlock submit button
+  if (secretUnlocked) {
+      document.getElementById('submitBtn').style.display = 'inline-block';
+  }
+  
   const idx = progress.currentIndex;
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
@@ -4148,7 +4156,6 @@ function updateNavButtons() {
     markReviewBtn.style.background = 'linear-gradient(145deg, #ffb84d, var(--warning))';
   }
 }
-
 document.getElementById('prevBtn').onclick = () => {
   if (progress.currentIndex > 0) {
     progress.currentIndex--;
