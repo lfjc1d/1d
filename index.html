@@ -3119,7 +3119,10 @@ function startExamWithRecovery(progressData) {
     showToast('✅ Exam resumed from saved progress', 'success', 4000);
     
     saveExamProgress();
-  document.getElementById('submitBtn').style.display = 'none';
+ // Don't hide button on recovery if it was already visible
+if (!secretUnlocked && !(progress && progress.timeLeftSec <= 600)) {
+    document.getElementById('submitBtn').style.display = 'none';
+}
 }
 
 function discardPowerLossRecovery() {
