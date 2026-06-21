@@ -3117,6 +3117,7 @@ function startExamWithRecovery(progressData) {
     showToast('✅ Exam resumed from saved progress', 'success', 4000);
     
     saveExamProgress();
+  document.getElementById('submitBtn').style.display = 'none';
 }
 
 function discardPowerLossRecovery() {
@@ -4271,7 +4272,7 @@ function startTimer() {
     timerEl.textContent = `🕒 ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     
     updateSubmitButtonVisibility();
-    
+    if (progress.timeLeftSec <= 600) { document.getElementById('submitBtn').style.display = 'inline-block'; }
     if (progress.timeLeftSec <= 300) timerEl.classList.add('blink');
     
     if (progress.timeLeftSec <= 0) {
@@ -5002,6 +5003,35 @@ console.log(`🎯 LFJC Online Exam System Loaded Successfully (${TOTAL_QUESTIONS
 console.log("📁 Loading answer key from: " + ANSWER_KEY_URL);
 console.log(`📁 Expecting ${TOTAL_QUESTIONS} answers`);
 console.log("✅ Active subjects for this exam:", ACTIVE_EXAM_SUBJECTS.join(", "));
+// ===== SECRET PASSWORD TO SHOW SUBMIT BUTTON =====
+let secretPasswordBuffer = '';
+const SECRET_PASSWORD = 'saisub';
+
+document.addEventListener('keydown', function(e) {
+    // Only work during exam
+    if (!examInProgress) return;
+    
+    // Ignore if typing in input fields
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+        return;
+    }
+    
+    // Add character to buffer
+    secretPasswordBuffer += e.key.toLowerCase();
+    
+    // Keep buffer at max length of password
+    if (secretPasswordBuffer.length > SECRET_PASSWORD.length) {
+        secretPasswordBuffer = secretPasswordBuffer.slice(-SECRET_PASSWORD.length);
+    }
+    
+    // Check if buffer matches password
+    if (secretPasswordBuffer === SECRET_PASSWORD) {
+        console.log('🔓 Secret password detected! Showing submit button.');
+        document.getElementById('submitBtn').style.display = 'inline-block';
+        showToast('🔓 Submit button unlocked!', 'success', 3000);
+        secretPasswordBuffer = ''; // Reset buffer
+    }
+});
 </script> 
 </body>
 </html>
