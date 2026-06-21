@@ -1612,13 +1612,14 @@ body.anti-sleep-active {
 </div>
 
 <div id="examArea" style="display:none;">
-  <div id="examHeader">
+<div id="examHeader">
     <div id="stuInfo"></div>
     <div id="stuQInfo"></div>
     <div>
         <span id="timerEl">🕒 00:00</span>
+        <span id="violationCounter" style="margin-left: 20px; color: orange; font-weight: bold; display: none;">⚠️ Violations: 0/3</span>
     </div>
-  </div>
+</div>
 
   <div id="questionContainer" style="text-align:center;margin-top:10px;"></div>
 
@@ -3260,6 +3261,20 @@ function showToast(message, type = 'info', duration = 3000) {
 
 
 function showTabSwitchWarning(count) {
+    // Update persistent counter in header
+    const counter = document.getElementById('violationCounter');
+    if (counter) {
+        counter.style.display = 'inline-block';
+        counter.textContent = `⚠️ Tab Violations: ${count}/3`;
+        if (count >= 3) {
+            counter.style.color = 'red';
+            counter.style.animation = 'blinkTimer 0.5s infinite';
+        } else {
+            counter.style.color = 'orange';
+            counter.style.animation = 'none';
+        }
+    }
+    
     const existingWarning = document.querySelector('.tab-switch-warning');
     if (existingWarning) {
         existingWarning.style.animation = 'slideUp 0.5s ease';
@@ -3325,8 +3340,6 @@ function showTabSwitchWarning(count) {
         }, 3000);
     }
 }
-
-
 class FullScreenSecurity {
     constructor() {
         this.isFullScreen = false;
