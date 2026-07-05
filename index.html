@@ -5244,8 +5244,10 @@ function showSummaryInterface(subjData) {
   exitBtn.style.cursor = 'pointer';
   exitBtn.style.display = 'inline-block';
   
-    exitBtn.onclick = function() {
-    closeExamTab();
+  exitBtn.onclick = function() {
+    if (confirm('Are you sure you want to exit the exam?')) {
+      closeExamTab();
+    }
   };
 }
 // ===== STRONG FULL SCREEN FOR RESULTS TABLE =====
