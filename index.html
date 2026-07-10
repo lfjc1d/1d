@@ -2205,16 +2205,7 @@ const FORM_FIELDS = {
 
 
 const GOOGLE_FORMS = {
-    '1': "https://docs.google.com/forms/d/e/1FAIpQLSf3yjjAMaBcFjpSQMRmV-ZW2frkyXEvOAY_1r7ULq_EMgHYUg/formResponse",
-    '2': "https://docs.google.com/forms/d/e/1FAIpQLSeGGmnnjAwMqkk6DGFas14QXgcA6BdanP1_dJ14zQf2C19KWQ/formResponse",
-    '3': "https://docs.google.com/forms/d/e/1FAIpQLSfL701oPlahtK3IZddw1BfUS2EK7tqq0vJhBe9ByIKtzjJ6zQ/formResponse",
-    '4': "https://docs.google.com/forms/d/e/1FAIpQLSdWuWNSIYvhGhuMM6PYgtSlVqSj13w1Zl1u8-_rhBQnc701Jg/formResponse",
-    '5': "https://docs.google.com/forms/d/e/1FAIpQLSefZVKtwZlJElI9glQNNqbmHxkZ3j0SiS_8wTbLGASb9GY5Cw/formResponse",
-    '6': "https://docs.google.com/forms/d/e/1FAIpQLSepZLTKHz-2Py1pxdSD8NsQDgVCwxtU-UxvQXzkraSkLmySaQ/formResponse",
-    '7': "https://docs.google.com/forms/d/e/1FAIpQLSfQ1G-FBspkhmCxtowN7naYNe-DRgVryrxr0lObBKXllqoOgA/formResponse",
-    '8': "https://docs.google.com/forms/d/e/1FAIpQLScfE3Vrp2CCoyxDr-0LZGi3TvsfYZXqD9IhIb9_wMD0laVGQg/formResponse",
-    '9': "https://docs.google.com/forms/d/e/1FAIpQLSeS7gUi_XM5gu_NrZd3Ba8-pvsZiE_J1qtnu2Y3XvogqlkbLg/formResponse",
-    '10': "https://docs.google.com/forms/d/e/1FAIpQLSfbGaaOX6w5VGSfbqwBJEjc65JddzbZ4cfkIPCOcnMUcIF1MA/formResponse"
+      '1': "https://docs.google.com/forms/d/e/1FAIpQLSf3n6fMXa3mP_ij279XKLELfohGwuMfmWWc9fTfM3VgY2oWLg/formResponse"
 };
 
 
@@ -4169,15 +4160,7 @@ function getFormFields(formId) {
 }
 
 function getAssignedForm(studentData) {
-    const forms = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-    
-    if (studentData.roll && !isNaN(studentData.roll)) {
-        const rollNumber = parseInt(studentData.roll);
-        const formIndex = (rollNumber - 1) % forms.length;
-        console.log("Assigned Form:", forms[formIndex]);
-        return forms[formIndex];
-    }
-    
+    // All students use the same form
     return '1';
 }
 
