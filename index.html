@@ -5649,8 +5649,9 @@ function submitExam() {
   
   submitToGoogleFormsWithRetry(answersData).then(result => {
     if (result.success) {
-      console.log('✅ Google Forms submission successful');
-      updateSubmissionStatus('success', '✅ Answers successfully submitted !');
+  console.log('✅ Google Forms submission successful');
+  updateSubmissionStatus('success', '✅ Answers successfully submitted !');
+  localStorage.setItem('exam_submitted', 'true'); // ✅ ADD THIS LINE
     } else if (result.offline) {
       console.log('📴 Submission saved offline');
       updateSubmissionStatus('error', '📴 Submission saved offline. Will auto-retry when online.');
@@ -5739,9 +5740,71 @@ function showSummaryInterface(subjData) {
   document.getElementById('waitingMessage').style.display = 'none';
   document.getElementById('autoTransitionMessage').style.display = 'none';
   
- // ✅ REMOVED EXIT BUTTON - Just show results
-const exitBtn = document.getElementById('closeSummaryBtn');
-exitBtn.style.display = 'none';
+  // ============================================================
+  // ✅ EXIT BUTTON - HIDDEN UNTIL FORM SUBMISSION CONFIRMED
+  // ============================================================
+  const exitBtn = document.getElementById('closeSummaryBtn');
+  exitBtn.textContent = '✖ Exit Exam';
+  exitBtn.style.background = 'linear-gradient(145deg, #dc3545, #c82333)';
+  exitBtn.style.padding = '12px 30px';
+  exitBtn.style.fontSize = '18px';
+  exitBtn.style.border = 'none';
+  exitBtn.style.borderRadius = '8px';
+  exitBtn.style.color = 'white';
+  exitBtn.style.cursor = 'pointer';
+  exitBtn.style.display = 'none'; // ✅ HIDDEN BY DEFAULT - WAITING FOR SUBMISSION
+  
+  exitBtn.onclick = function() {
+    if (confirm('✅ Your exam has been submitted successfully! Are you sure you want to exit?')) {
+      closeExamTab();
+    }
+  };
+  
+  // ✅ SHOW EXIT BUTTON ONLY AFTER FORM SUBMISSION
+  const submissionStatus = document.getElementById('summarySubmissionStatus');
+  if (submissionStatus) {
+    const isSuccess = submissionStatus.textContent.includes('successfully submitted');
+    const isSubmitted = googleFormsSubmissionStatus === 'success' || 
+                        localStorage.getItem('exam_submitted') === 'true';
+    
+    if (isSuccess || isSubmitted) {
+      exitBtn.style.display = 'inline-block';
+      console.log('✅ Exit button shown - Form submission confirmed');
+    } else {
+      // Keep checking for submission status
+      const checkInterval = setInterval(function() {
+        const statusText = submissionStatus.textContent || '';
+        if (statusText.includes('successfully submitted') || 
+            googleFormsSubmissionStatus === 'success') {
+          exitBtn.style.display = 'inline-block';
+          clearInterval(checkInterval);
+          console.log('✅ Exit button now shown - Submission completed');
+        }
+      }, 1000);
+      
+      setTimeout(function() {
+        clearInterval(checkInterval);
+        if (exitBtn.style.display !== 'inline-block') {
+          console.log('⚠️ Submission still pending - Exit button hidden');
+        }
+      }, 10000);
+    }
+  }
+  
+  // ✅ Add submission status observer
+  const observer = new MutationObserver(function() {
+    const statusDiv = document.getElementById('summarySubmissionStatus');
+    if (statusDiv && statusDiv.textContent.includes('successfully submitted')) {
+      exitBtn.style.display = 'inline-block';
+      observer.disconnect();
+      console.log('✅ Exit button shown via observer');
+    }
+  });
+  
+  const statusDiv = document.getElementById('summarySubmissionStatus');
+  if (statusDiv) {
+    observer.observe(statusDiv, { childList: true, subtree: true, characterData: true });
+  }
 }
 // ===== STRONG FULL SCREEN FOR RESULTS TABLE =====
 // This runs every 2 seconds and forces full screen when results are showing
