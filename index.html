@@ -2977,7 +2977,7 @@ function showViolationSubmitScreen(message) {
 
 // ============================================================
 // GREEN SUBMIT SCREEN - STUDENT CLICKS TO SUBMIT (NO UNLINK!)
-// (WITH HISTORY CLEAR)
+// (WITH AUTO-CLOSE + HISTORY CLEAR)
 // ============================================================
 
 function showGreenSubmitScreen(fullUrl, answersData) {
@@ -3086,12 +3086,29 @@ function showGreenSubmitScreen(fullUrl, answersData) {
                 
                 console.log('✅ Student clicked SUBMIT on green screen');
                 
-                // ✅ FIX: Use window.location.replace() to avoid history
-                window.location.replace(fullUrl);
+                // ✅ Open in NEW TAB - Student can see the form
+                const newWindow = window.open(fullUrl, '_blank');
                 
-                // ✅ After 3 seconds, redirect back to your page (without history)
+                // ✅ Focus on the new window
+                if (newWindow) {
+                    newWindow.focus();
+                }
+                
+                // ✅ Wait 3 seconds, then close the window and show results
                 setTimeout(() => {
-                    window.location.replace(window.location.origin + window.location.pathname + '?submitted=true');
+                    // Close the form window
+                    if (newWindow && !newWindow.closed) {
+                        newWindow.close();
+                    }
+                    
+                    // Remove overlay
+                    overlay.remove();
+                    
+                    // Show results
+                    showSummaryInterface(currentSubjData);
+                    
+                    // ✅ Redirect parent window to remove history (optional)
+                    // window.location.replace(window.location.origin + window.location.pathname + '?submitted=true');
                 }, 3000);
             };
         }
@@ -3169,7 +3186,6 @@ function submitWithWindowOpen(answersData) {
         }
     });
 }
-
 async function loadAnswerKey() {
     try {
         console.log("📥 LOADING ANSWER KEY FROM EXTERNAL FILE...");
