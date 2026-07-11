@@ -2945,8 +2945,8 @@ function showViolationSubmitScreen(message) {
     }, 100);
 }
 
-// ============================================================
-// GREEN SUBMIT SCREEN - WITH HISTORY CLEAR
+  // ============================================================
+// GREEN SUBMIT SCREEN - STUDENT CLICKS TO SUBMIT (NO UNLINK!)
 // ============================================================
 
 function showGreenSubmitScreen(fullUrl, answersData) {
@@ -3001,7 +3001,7 @@ function showGreenSubmitScreen(fullUrl, answersData) {
             ">📤 SUBMIT</button>
             <div style="margin-top: 20px; font-size: 14px; color: #b7e4c7;">
                 Click the button above to submit your exam.
-            </div>
+                </div>
         </div>
     `;
     
@@ -3021,26 +3021,32 @@ function showGreenSubmitScreen(fullUrl, answersData) {
     
     document.body.appendChild(overlay);
     
-    // ============================================================
-    // ✅ THIS IS THE FIXED CLICK HANDLER
-    // ============================================================
+    // Add click handler for the submit button
     setTimeout(() => {
         const submitBtn = document.getElementById('greenSubmitBtn');
         if (submitBtn) {
             submitBtn.onclick = function() {
+                // ✅ This is a MANUAL CLICK - NO UNLINK!
                 console.log('✅ Student clicked SUBMIT on green screen');
                 
-                // ✅ REPLACE CURRENT PAGE WITH FORM URL (CLEARS HISTORY)
-                window.location.replace(fullUrl);
+                // Open Google Form in NEW TAB (student sees it briefly)
+                const newWindow = window.open(fullUrl, '_blank');
                 
-                // ✅ AFTER 3 SECONDS, REDIRECT BACK TO EXAM PAGE (CLEARS HISTORY)
-                setTimeout(function() {
-                    window.location.replace(window.location.origin + window.location.pathname + '?submitted=true');
+                // Auto-close after 3 seconds
+                setTimeout(() => {
+                    if (newWindow && !newWindow.closed) {
+                        newWindow.close();
+                    }
+                    // Remove overlay
+                    overlay.remove();
+                    // Show results
+                    showSummaryInterface(currentSubjData);
                 }, 3000);
             };
         }
     }, 100);
 }
+
 // ===== SUBMIT WITH GREEN SCREEN (NO UNLINK! STUDENT CLICKS SUBMIT) =====
 function submitWithWindowOpen(answersData) {
     return new Promise((resolve) => {
