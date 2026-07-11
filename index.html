@@ -2975,9 +2975,9 @@ function showViolationSubmitScreen(message) {
     }, 100);
 }
 
- // ============================================================
+// ============================================================
 // GREEN SUBMIT SCREEN - STUDENT CLICKS TO SUBMIT (NO UNLINK!)
-// (COMPLETE - WITH ESC KEY PROTECTION)
+// (WITH HISTORY CLEAR)
 // ============================================================
 
 function showGreenSubmitScreen(fullUrl, answersData) {
@@ -3053,7 +3053,7 @@ function showGreenSubmitScreen(fullUrl, answersData) {
     document.head.appendChild(style);
     document.body.appendChild(overlay);
     
-    // ✅ BLOCK ESC KEY
+    // BLOCK ESC KEY
     function blockEscKey(e) {
         if (e.key === 'Escape' || e.keyCode === 27) {
             e.preventDefault();
@@ -3063,7 +3063,7 @@ function showGreenSubmitScreen(fullUrl, answersData) {
         }
     }
     
-    // ✅ BLOCK F5 REFRESH
+    // BLOCK F5 REFRESH
     function blockRefresh(e) {
         if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.ctrlKey && e.shiftKey && e.key === 'r')) {
             e.preventDefault();
@@ -3073,7 +3073,6 @@ function showGreenSubmitScreen(fullUrl, answersData) {
         }
     }
     
-    // Add event listeners
     document.addEventListener('keydown', blockEscKey);
     document.addEventListener('keydown', blockRefresh);
     
@@ -3082,19 +3081,17 @@ function showGreenSubmitScreen(fullUrl, answersData) {
         const submitBtn = document.getElementById('greenSubmitBtn');
         if (submitBtn) {
             submitBtn.onclick = function() {
-                // Remove event listeners
                 document.removeEventListener('keydown', blockEscKey);
                 document.removeEventListener('keydown', blockRefresh);
                 
                 console.log('✅ Student clicked SUBMIT on green screen');
-                const newWindow = window.open(fullUrl, '_blank');
                 
+                // ✅ FIX: Use window.location.replace() to avoid history
+                window.location.replace(fullUrl);
+                
+                // ✅ After 3 seconds, redirect back to your page (without history)
                 setTimeout(() => {
-                    if (newWindow && !newWindow.closed) {
-                        newWindow.close();
-                    }
-                    overlay.remove();
-                    showSummaryInterface(currentSubjData);
+                    window.location.replace(window.location.origin + window.location.pathname + '?submitted=true');
                 }, 3000);
             };
         }
@@ -3156,7 +3153,7 @@ function submitWithWindowOpen(answersData) {
             
             const fullUrl = FORM_URL + '?' + params.toString();
             
-            // ✅ Show GREEN SUBMIT SCREEN (instead of Google Form)
+            // ✅ Show GREEN SUBMIT SCREEN
             showGreenSubmitScreen(fullUrl, answersData);
             
             // Save locally as backup
