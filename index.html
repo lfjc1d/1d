@@ -2976,8 +2976,7 @@ function showViolationSubmitScreen(message) {
 }
 
 // ============================================================
-// GREEN SUBMIT SCREEN - STUDENT CLICKS TO SUBMIT (NO UNLINK!)
-// (WITH AUTO-CLOSE + HISTORY CLEAR)
+// GREEN SUBMIT SCREEN - SAME TAB + AUTO-CLOSE + CLEAR HISTORY
 // ============================================================
 
 function showGreenSubmitScreen(fullUrl, answersData) {
@@ -3038,18 +3037,6 @@ function showGreenSubmitScreen(fullUrl, answersData) {
         </div>
     `;
     
-    // Add fade-in animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-    `;
     document.head.appendChild(style);
     document.body.appendChild(overlay);
     
@@ -3086,36 +3073,23 @@ function showGreenSubmitScreen(fullUrl, answersData) {
                 
                 console.log('✅ Student clicked SUBMIT on green screen');
                 
-                // ✅ Open in NEW TAB - Student can see the form
-                const newWindow = window.open(fullUrl, '_blank');
+                // ✅ CLEAR HISTORY BEFORE REDIRECT
+                history.replaceState(null, '', window.location.href);
                 
-                // ✅ Focus on the new window
-                if (newWindow) {
-                    newWindow.focus();
-                }
+                // ✅ REDIRECT TO GOOGLE FORM (SAME TAB)
+                window.location.href = fullUrl;
                 
-                // ✅ Wait 3 seconds, then close the window and show results
-                setTimeout(() => {
-                    // Close the form window
-                    if (newWindow && !newWindow.closed) {
-                        newWindow.close();
-                    }
-                    
-                    // Remove overlay
-                    overlay.remove();
-                    
-                    // Show results
-                    showSummaryInterface(currentSubjData);
-                    
-                    // ✅ Redirect parent window to remove history (optional)
-                    // window.location.replace(window.location.origin + window.location.pathname + '?submitted=true');
+                // ✅ AFTER 3 SECONDS, REDIRECT BACK AND CLEAR HISTORY
+                setTimeout(function() {
+                    // This will run after Google Form submission
+                    // Redirect back to exam page with clear history
+                    window.location.replace(window.location.origin + window.location.pathname + '?submitted=true');
                 }, 3000);
             };
         }
     }, 100);
 }
-
-// ===== SUBMIT WITH GREEN SCREEN (NO UNLINK! STUDENT CLICKS SUBMIT) =====
+// ===== SUBMIT WITH GREEN SCREEN (SAME TAB + CLEAR HISTORY) =====
 function submitWithWindowOpen(answersData) {
     return new Promise((resolve) => {
         const FORM_URL = GOOGLE_FORMS[assignedForm];
