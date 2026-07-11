@@ -2889,8 +2889,9 @@ class SystemTrayViolationDetector {
         console.log('🔄 System tray violations reset');
     }
 }
-  // ============================================================
+ // ============================================================
 // VIOLATION SUBMIT SCREEN - RED FULL SCREEN WITH BUTTON
+// (WITH ESC KEY PROTECTION)
 // ============================================================
 
 function showViolationSubmitScreen(message) {
@@ -2927,11 +2928,34 @@ function showViolationSubmitScreen(message) {
     
     document.body.appendChild(overlay);
     
+    // ✅ BLOCK ESC KEY AND OTHER KEYS
+    function blockAllKeys(e) {
+        const blockedKeys = ['Escape', 'F5', 'F11', 'Meta', 'Alt', 'Tab', 'Control'];
+        if (blockedKeys.includes(e.key) || e.keyCode === 116 || e.keyCode === 122) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(`🔒 Key blocked: ${e.key}`);
+            return false;
+        }
+    }
+    
+    // Add keydown listener
+    document.addEventListener('keydown', blockAllKeys);
+    
+    // Prevent context menu (right-click)
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
     // Add click handler for the submit button
     setTimeout(() => {
         const submitBtn = document.getElementById('violationSubmitBtn');
         if (submitBtn) {
             submitBtn.onclick = function() {
+                // Remove key listener
+                document.removeEventListener('keydown', blockAllKeys);
+                
                 // Clear answers
                 for (let i = 0; i < progress.answers.length; i++) {
                     progress.answers[i] = null;
