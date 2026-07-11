@@ -5227,16 +5227,15 @@ function submitWithWindowOpen(answersData) {
             // Show status to student
             showToast(`📤 Submitting... (${submissionQueue.length + 1} students ahead)`, 'info', 3000);
             
-            // Open in new window (will close automatically after submission)
-            const newWindow = window.open(fullUrl, '_blank', 'width=1,height=1');
-            
-            // Auto-close after 5 seconds
-            setTimeout(() => {
-                if (newWindow && !newWindow.closed) {
-                    newWindow.close();
-                }
-                resolve(true);
-            }, 5000);
+            // ✅ Open in SAME tab - NO pop-up blocker!
+window.location.href = fullUrl;
+
+// Save locally as backup
+saveSubmissionLocally(answersData);
+localStorage.removeItem('hasViolations');
+clearSavedExam();
+
+resolve(true);
             
         } catch (error) {
             console.error('Submission error:', error);
