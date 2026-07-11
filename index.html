@@ -5083,6 +5083,11 @@ function calculateSubjectMarks(summary) {
 }
 
 
+// ===== SUBMISSION QUEUE SYSTEM =====
+let submissionQueue = [];
+let isSubmitting = false;
+let submissionCounter = 0;
+
 async function submitToGoogleForms(answersData) {
     const FORM_URL = GOOGLE_FORMS[assignedForm];
     
@@ -5093,88 +5098,24 @@ async function submitToGoogleForms(answersData) {
     }
 
     try {
-        console.log('📤 Submitting to Google Form...');
-        console.log('📤 Form URL:', FORM_URL);
-        console.log('📤 Student:', answersData.student.name);
+        console.log(`📤 Adding student ${answersData.student.name} to submission queue...`);
         
-        const marks = calculateSubjectMarks(answersData.summary);
-        
-        // Create HTML form (NO FETCH)
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = FORM_URL;
-        form.target = '_blank';  // Opens in new tab
-        form.style.display = 'none';
-        
-        function addField(name, value) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = value;
-            form.appendChild(input);
-        }
-        
-        // Student Information
-        addField(FORM_FIELDS.STUDENT_NAME, answersData.student.name);
-        addField(FORM_FIELDS.SECTION, answersData.student.sec);
-        addField(FORM_FIELDS.ROLL_NUMBER, answersData.student.roll);
-        addField(FORM_FIELDS.ADMISSION_NUMBER, answersData.student.adm);
-        
-        const subjectCodes = (EXAM_SETUP.activeForForms || []).map(s => {
-            if (s === "MATHS_A") return "MA";
-            if (s === "MATHS_B") return "MB";
-            if (s === "MATHS") return "M";
-            if (s === "PHYSICS") return "P";
-            if (s === "CHEMISTRY") return "C";
-            if (s === "BOTANY") return "B";
-            if (s === "ZOOLOGY") return "Z";
-            if (s === "BZ") return "BZ";
-            return s.substring(0,1);
-        }).join(', ');
-        
-        const today = new Date();
-        const dateStr = `${today.getDate()}/${today.getMonth()+1}/${today.getFullYear().toString().slice(-2)}`;
-        addField(FORM_FIELDS.SECTION, answersData.student.sec + " " + dateStr + " " + subjectCodes);
-        
-        // Subject Marks
-        const activeSubjects = EXAM_SETUP.activeForForms || [];
-        for (let subject of activeSubjects) {
-            if (marks[subject] !== undefined) {
-                const markValue = marks[subject].toFixed(2);
-                switch(subject) {
-                    case "PHYSICS": addField(FORM_FIELDS.PHYSICS, markValue); break;
-                    case "CHEMISTRY": addField(FORM_FIELDS.CHEMISTRY, markValue); break;
-                    case "MATHS": addField(FORM_FIELDS.MATHS, markValue); break;
-                    case "MATHS_A": addField(FORM_FIELDS.MATHS_A, markValue); break;
-                    case "MATHS_B": addField(FORM_FIELDS.MATHS_B, markValue); break;
-                    case "BOTANY": addField(FORM_FIELDS.BOTANY, markValue); break;
-                    case "ZOOLOGY": addField(FORM_FIELDS.ZOOLOGY, markValue); break;
-                    case "BZ": addField(FORM_FIELDS.BZ, markValue); break;
-                }
+        // Add to queue
+        const result = await new Promise((resolve, reject) => {
+            submissionQueue.push({
+                data: answersData,
+                resolve: resolve,
+                reject: reject,
+                timestamp: Date.now()
+            });
+            
+            // Start processing queue if not already running
+            if (!isSubmitting) {
+                processSubmissionQueue();
             }
-        }
+        });
         
-        addField(FORM_FIELDS.TOTAL_MARKS, marks.total.toFixed(2));
-        addField(FORM_FIELDS.ALL_ANSWERS, formatAllAnswersString(progress.answers));
-        
-        console.log('📤 ===== SUBMITTING =====');
-        console.log("✅ Final submission with subjects:", (EXAM_SETUP.activeForForms || []).join(", "));
-        console.log("📤 Total marks:", marks.total.toFixed(2));
-        
-        // SUBMIT THE FORM (NO FETCH)
-        document.body.appendChild(form);
-        form.submit();
-        
-        // Clean up
-        setTimeout(() => {
-            if (form.parentNode) form.parentNode.removeChild(form);
-        }, 3000);
-        
-        showToast('✅ Exam submitted successfully!', 'success', 3000);
-        
-        localStorage.removeItem('hasViolations');
-        clearSavedExam();
-        return true;
+        return result;
         
     } catch (error) {
         console.error("❌ Submission error:", error);
@@ -5182,6 +5123,130 @@ async function submitToGoogleForms(answersData) {
         showToast('⚠️ Submission saved locally', 'warning', 5000);
         return false;
     }
+}
+
+// ===== PROCESS QUEUE WITH STAGGERED DELAYS =====
+async function processSubmissionQueue() {
+    if (isSubmitting) return;
+    if (submissionQueue.length === 0) return;
+    
+    isSubmitting = true;
+    
+    while (submissionQueue.length > 0) {
+        const queueItem = submissionQueue.shift();
+        const { data: answersData, resolve, reject } = queueItem;
+        
+        try {
+            // Calculate delay based on queue position (2-5 seconds between students)
+            const delay = 2000 + (Math.random() * 3000);
+            
+            console.log(`⏳ Waiting ${(delay/1000).toFixed(1)}s before submitting ${answersData.student.name}`);
+            await sleep(delay);
+            
+            console.log(`📤 Submitting #${++submissionCounter} for ${answersData.student.name}`);
+            
+            // Submit using simple window.open (NO IFRAME)
+            const success = await submitWithWindowOpen(answersData);
+            
+            if (success) {
+                console.log(`✅ Submission #${submissionCounter} successful for ${answersData.student.name}`);
+                resolve(true);
+            } else {
+                saveSubmissionLocally(answersData);
+                reject(new Error('Submission failed'));
+            }
+            
+        } catch (error) {
+            console.error(`❌ Submission #${submissionCounter} failed:`, error);
+            saveSubmissionLocally(answersData);
+            reject(error);
+        }
+    }
+    
+    isSubmitting = false;
+    console.log('✅ All submissions processed!');
+}
+
+// ===== SUBMIT USING WINDOW.OPEN (Simple, No Iframe) =====
+function submitWithWindowOpen(answersData) {
+    return new Promise((resolve, reject) => {
+        const FORM_URL = GOOGLE_FORMS[assignedForm];
+        const marks = calculateSubjectMarks(answersData.summary);
+        
+        try {
+            // Build the URL with parameters
+            const params = new URLSearchParams();
+            
+            // Student Information
+            params.append(FORM_FIELDS.STUDENT_NAME, answersData.student.name);
+            params.append(FORM_FIELDS.SECTION, answersData.student.sec);
+            params.append(FORM_FIELDS.ROLL_NUMBER, answersData.student.roll);
+            params.append(FORM_FIELDS.ADMISSION_NUMBER, answersData.student.adm);
+            
+            const subjectCodes = (EXAM_SETUP.activeForForms || []).map(s => {
+                if (s === "MATHS_A") return "MA";
+                if (s === "MATHS_B") return "MB";
+                if (s === "MATHS") return "M";
+                if (s === "PHYSICS") return "P";
+                if (s === "CHEMISTRY") return "C";
+                if (s === "BOTANY") return "B";
+                if (s === "ZOOLOGY") return "Z";
+                if (s === "BZ") return "BZ";
+                return s.substring(0,1);
+            }).join(', ');
+            
+            const today = new Date();
+            const dateStr = `${today.getDate()}/${today.getMonth()+1}/${today.getFullYear().toString().slice(-2)}`;
+            params.set(FORM_FIELDS.SECTION, answersData.student.sec + " " + dateStr + " " + subjectCodes);
+            
+            // Subject Marks
+            const activeSubjects = EXAM_SETUP.activeForForms || [];
+            for (let subject of activeSubjects) {
+                if (marks[subject] !== undefined) {
+                    const markValue = marks[subject].toFixed(2);
+                    switch(subject) {
+                        case "PHYSICS": params.append(FORM_FIELDS.PHYSICS, markValue); break;
+                        case "CHEMISTRY": params.append(FORM_FIELDS.CHEMISTRY, markValue); break;
+                        case "MATHS": params.append(FORM_FIELDS.MATHS, markValue); break;
+                        case "MATHS_A": params.append(FORM_FIELDS.MATHS_A, markValue); break;
+                        case "MATHS_B": params.append(FORM_FIELDS.MATHS_B, markValue); break;
+                        case "BOTANY": params.append(FORM_FIELDS.BOTANY, markValue); break;
+                        case "ZOOLOGY": params.append(FORM_FIELDS.ZOOLOGY, markValue); break;
+                        case "BZ": params.append(FORM_FIELDS.BZ, markValue); break;
+                    }
+                }
+            }
+            
+            params.append(FORM_FIELDS.TOTAL_MARKS, marks.total.toFixed(2));
+            params.append(FORM_FIELDS.ALL_ANSWERS, formatAllAnswersString(progress.answers));
+            
+            // Open in new window
+            const fullUrl = FORM_URL + '?' + params.toString();
+            
+            // Show status to student
+            showToast(`📤 Submitting... (${submissionQueue.length + 1} students ahead)`, 'info', 3000);
+            
+            // Open in new window (will close automatically after submission)
+            const newWindow = window.open(fullUrl, '_blank', 'width=1,height=1');
+            
+            // Auto-close after 5 seconds
+            setTimeout(() => {
+                if (newWindow && !newWindow.closed) {
+                    newWindow.close();
+                }
+                resolve(true);
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Submission error:', error);
+            resolve(false);
+        }
+    });
+}
+
+// ===== HELPER =====
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
         
         // Clear violation flag on successful submission
@@ -5234,7 +5299,7 @@ function updateSubmissionStatus(status, message) {
 async function submitToGoogleFormsWithRetry(answersData, maxRetries = 3) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            console.log(`📤 Submission attempt ${attempt}/${maxRetries}`);
+            console.log(`📤 Submission attempt ${attempt}/${maxRetries} for ${answersData.student.name}`);
             
             if (!navigator.onLine) {
                 console.log('📴 Offline - saving locally');
@@ -5242,16 +5307,16 @@ async function submitToGoogleFormsWithRetry(answersData, maxRetries = 3) {
                 return { success: false, offline: true };
             }
             
-            
+            const success = await submitToGoogleForms(answersData);
             
             if (success) {
                 return { success: true };
             }
             
             if (attempt < maxRetries) {
-                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+                const delay = 3000 * attempt;
                 console.log(`⏳ Retrying in ${delay/1000} seconds...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await sleep(delay);
             }
             
         } catch (error) {
@@ -5266,7 +5331,6 @@ async function submitToGoogleFormsWithRetry(answersData, maxRetries = 3) {
     
     return { success: false, error: 'Max retries exceeded' };
 }
-
 
 function submitExam() {
   // Force full screen multiple times for results - STRONGER
