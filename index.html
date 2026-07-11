@@ -2945,8 +2945,8 @@ function showViolationSubmitScreen(message) {
     }, 100);
 }
 
-  // ============================================================
-// GREEN SUBMIT SCREEN - STUDENT CLICKS TO SUBMIT (NO UNLINK!)
+ // ============================================================
+// GREEN SUBMIT SCREEN - NO HISTORY ENTRY
 // ============================================================
 
 function showGreenSubmitScreen(fullUrl, answersData) {
@@ -3001,7 +3001,7 @@ function showGreenSubmitScreen(fullUrl, answersData) {
             ">📤 SUBMIT</button>
             <div style="margin-top: 20px; font-size: 14px; color: #b7e4c7;">
                 Click the button above to submit your exam.
-                </div>
+            </div>
         </div>
     `;
     
@@ -3026,27 +3026,39 @@ function showGreenSubmitScreen(fullUrl, answersData) {
         const submitBtn = document.getElementById('greenSubmitBtn');
         if (submitBtn) {
             submitBtn.onclick = function() {
-                // ✅ This is a MANUAL CLICK - NO UNLINK!
                 console.log('✅ Student clicked SUBMIT on green screen');
                 
-                // Open Google Form in NEW TAB (student sees it briefly)
-                const newWindow = window.open(fullUrl, '_blank');
+                // ✅ FIX: Use hidden iframe - NO HISTORY, NO TAB
+                const iframe = document.createElement('iframe');
+                iframe.style.cssText = 'display:none; width:0; height:0; border:none;';
+                iframe.src = fullUrl;
+                document.body.appendChild(iframe);
                 
-                // Auto-close after 3 seconds
+                // Remove iframe after 3 seconds
                 setTimeout(() => {
-                    if (newWindow && !newWindow.closed) {
-                        newWindow.close();
+                    if (iframe.parentNode) {
+                        iframe.parentNode.removeChild(iframe);
                     }
-                    // Remove overlay
-                    overlay.remove();
-                    // Show results
-                    showSummaryInterface(currentSubjData);
+                    console.log('📤 Form submitted via iframe - No history entry');
                 }, 3000);
+                
+                // Remove overlay immediately
+                overlay.remove();
+                
+                // Show results
+                showSummaryInterface(currentSubjData);
+                
+                // Save locally as backup
+                saveSubmissionLocally(answersData);
+                localStorage.removeItem('hasViolations');
+                clearSavedExam();
+                
+                // Show success toast
+                showToast('✅ Exam submitted successfully!', 'success', 3000);
             };
         }
     }, 100);
 }
-
 // ===== SUBMIT WITH GREEN SCREEN (NO UNLINK! STUDENT CLICKS SUBMIT) =====
 function submitWithWindowOpen(answersData) {
     return new Promise((resolve) => {
