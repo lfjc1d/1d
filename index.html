@@ -5083,9 +5083,6 @@ function calculateSubjectMarks(summary) {
 }
 
 
-// ============================================================
-// ✅ PASTE THIS NEW FUNCTION ✅
-// ============================================================
 async function submitToGoogleForms(answersData) {
     const FORM_URL = GOOGLE_FORMS[assignedForm];
     
@@ -5102,11 +5099,11 @@ async function submitToGoogleForms(answersData) {
         
         const marks = calculateSubjectMarks(answersData.summary);
         
-        // Create HTML form (NOT fetch)
+        // Create HTML form (NO FETCH)
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = FORM_URL;
-        form.target = '_self';  // Submits in same tab, NO popups
+        form.target = '_blank';  // Opens in new tab
         form.style.display = 'none';
         
         function addField(name, value) {
@@ -5161,18 +5158,31 @@ async function submitToGoogleForms(answersData) {
         addField(FORM_FIELDS.ALL_ANSWERS, formatAllAnswersString(progress.answers));
         
         console.log('📤 ===== SUBMITTING =====');
+        console.log("✅ Final submission with subjects:", (EXAM_SETUP.activeForForms || []).join(", "));
+        console.log("📤 Total marks:", marks.total.toFixed(2));
         
-        // SUBMIT THE FORM (THIS WORKS 100%)
+        // SUBMIT THE FORM (NO FETCH)
         document.body.appendChild(form);
         form.submit();
         
+        // Clean up
         setTimeout(() => {
             if (form.parentNode) form.parentNode.removeChild(form);
         }, 3000);
         
         showToast('✅ Exam submitted successfully!', 'success', 3000);
         
-       
+        localStorage.removeItem('hasViolations');
+        clearSavedExam();
+        return true;
+        
+    } catch (error) {
+        console.error("❌ Submission error:", error);
+        saveSubmissionLocally(answersData);
+        showToast('⚠️ Submission saved locally', 'warning', 5000);
+        return false;
+    }
+}
         
         // Clear violation flag on successful submission
         localStorage.removeItem('hasViolations');
@@ -5232,7 +5242,7 @@ async function submitToGoogleFormsWithRetry(answersData, maxRetries = 3) {
                 return { success: false, offline: true };
             }
             
-            const success = await submitToGoogleForms(answersData);
+            
             
             if (success) {
                 return { success: true };
