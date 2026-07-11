@@ -2787,31 +2787,35 @@ class SystemTrayViolationDetector {
     this.showWarning(this.violationCount, violationType);
     
     if (this.violationCount >= this.maxViolations) {
-        console.log('🚨 3 system tray violations detected - clearing all answers for 0 marks!');
-        localStorage.setItem('hasViolations', 'true');
-        
-        this.showViolationOverlay(`
-            🚨 EXAM VIOLATION DETECTED
-            <br><br>
-            ${violationType}
-            <br><br>
-            <strong>3 system tray violations reached!</strong>
-            <br>
-            All answers will be cleared (0 marks, no negative penalty).
-            <br>
-            Submitting exam in 3 seconds...
-        `, 'red');
-        
-        setTimeout(() => {
-            if (examInProgress) {
-                // CLEAR ALL ANSWERS - they will count as "Not Attempted" = 0 marks
-                for (let i = 0; i < progress.answers.length; i++) {
-                    progress.answers[i] = null;
-                }
-                submitExam();
-            }
-        }, 3000);
-    }
+    console.log('🚨 3 system tray violations detected!');
+    localStorage.setItem('hasViolations', 'true');
+    
+    // ✅ SHOW RED FULL SCREEN WITH SUBMIT BUTTON
+    showViolationSubmitScreen(`
+        <div style="font-size: 48px; margin-bottom: 20px;">🚨</div>
+        <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">EXAM VIOLATION DETECTED</div>
+        <div style="font-size: 18px; margin-bottom: 10px;">${violationType}</div>
+        <div style="font-size: 16px; margin-bottom: 30px; color: #ffcccc;">
+            <strong>3 system tray violations reached!</strong><br>
+            All answers will be cleared (0 marks).
+        </div>
+        <button id="violationSubmitBtn" style="
+            padding: 20px 60px;
+            font-size: 28px;
+            font-weight: bold;
+            background: #32CD32;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(50, 205, 50, 0.5);
+            animation: pulse 1s infinite;
+        ">✅ CLICK TO SUBMIT</button>
+        <div style="margin-top: 20px; font-size: 14px; color: #ffcccc;">
+            You must click the button above to submit your exam.
+        </div>
+    `);
+}
 }
     
     showWarning(count, violationType) {
@@ -2884,6 +2888,61 @@ class SystemTrayViolationDetector {
         this.lastViolationTime = 0;
         console.log('🔄 System tray violations reset');
     }
+}
+  // ============================================================
+// VIOLATION SUBMIT SCREEN - RED FULL SCREEN WITH BUTTON
+// ============================================================
+
+function showViolationSubmitScreen(message) {
+    // Remove any existing overlay
+    const existing = document.getElementById('violationSubmitOverlay');
+    if (existing) existing.remove();
+    
+    // Create full screen red overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'violationSubmitOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 0, 0, 0.95);
+        z-index: 999999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="max-width: 600px; width: 100%;">
+            ${message}
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Add click handler for the submit button
+    setTimeout(() => {
+        const submitBtn = document.getElementById('violationSubmitBtn');
+        if (submitBtn) {
+            submitBtn.onclick = function() {
+                // Clear answers
+                for (let i = 0; i < progress.answers.length; i++) {
+                    progress.answers[i] = null;
+                }
+                // Remove overlay
+                overlay.remove();
+                // Submit exam
+                submitExam();
+            };
+        }
+    }, 100);
 }
 
 
@@ -3799,18 +3858,39 @@ function showTabSwitchWarning(count) {
         }, 5000);
     }
     
-    if (count >= 3) {
-        localStorage.setItem('hasViolations', 'true');
-        showToast('🚨 3 tab switches detected! Auto-submitting with 0 marks (no negative penalty).', 'error', 3000);
-        setTimeout(() => {
-            if (examInProgress) {
-                // CLEAR ALL ANSWERS - they will count as "Not Attempted" = 0 marks
-                for (let i = 0; i < progress.answers.length; i++) {
-                    progress.answers[i] = null;
-                }
-                submitExam();
-            }
-        }, 3000);
+   if (count >= 3) {
+    localStorage.setItem('hasViolations', 'true');
+    showToast('🚨 3 tab switches detected!', 'error', 3000);
+    
+    // ✅ SHOW RED FULL SCREEN WITH SUBMIT BUTTON
+    setTimeout(() => {
+        if (examInProgress) {
+            showViolationSubmitScreen(`
+                <div style="font-size: 48px; margin-bottom: 20px;">🚨</div>
+                <div style="font-size: 28px; font-weight: bold; margin-bottom: 20px;">TAB SWITCH VIOLATION</div>
+                <div style="font-size: 18px; margin-bottom: 10px;">3 tab switches detected</div>
+                <div style="font-size: 16px; margin-bottom: 30px; color: #ffcccc;">
+                    <strong>All answers will be cleared (0 marks).</strong>
+                </div>
+                <button id="violationSubmitBtn" style="
+                    padding: 20px 60px;
+                    font-size: 28px;
+                    font-weight: bold;
+                    background: #32CD32;
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    cursor: pointer;
+                    box-shadow: 0 0 30px rgba(50, 205, 50, 0.5);
+                    animation: pulse 1s infinite;
+                ">✅ CLICK TO SUBMIT</button>
+                <div style="margin-top: 20px; font-size: 14px; color: #ffcccc;">
+                    You must click the button above to submit your exam.
+                </div>
+            `);
+        }
+    }, 1000);
+}
     }
 }
 class FullScreenSecurity {
