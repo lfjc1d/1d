@@ -2889,9 +2889,8 @@ class SystemTrayViolationDetector {
         console.log('🔄 System tray violations reset');
     }
 }
-// ============================================================
+  // ============================================================
 // VIOLATION SUBMIT SCREEN - RED FULL SCREEN WITH BUTTON
-// (COMPLETE - WITH ESC KEY PROTECTION)
 // ============================================================
 
 function showViolationSubmitScreen(message) {
@@ -2918,7 +2917,6 @@ function showViolationSubmitScreen(message) {
         font-family: Arial, sans-serif;
         text-align: center;
         padding: 20px;
-        cursor: default;
     `;
     
     overlay.innerHTML = `
@@ -2929,39 +2927,11 @@ function showViolationSubmitScreen(message) {
     
     document.body.appendChild(overlay);
     
-    // ✅ BLOCK ESC KEY
-    function blockEscKey(e) {
-        if (e.key === 'Escape' || e.keyCode === 27) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🔒 ESC key blocked');
-            return false;
-        }
-    }
-    
-    // ✅ BLOCK F5 REFRESH
-    function blockRefresh(e) {
-        if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.ctrlKey && e.shiftKey && e.key === 'r')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🔒 Refresh blocked');
-            return false;
-        }
-    }
-    
-    // Add event listeners
-    document.addEventListener('keydown', blockEscKey);
-    document.addEventListener('keydown', blockRefresh);
-    
     // Add click handler for the submit button
     setTimeout(() => {
         const submitBtn = document.getElementById('violationSubmitBtn');
         if (submitBtn) {
             submitBtn.onclick = function() {
-                // Remove event listeners
-                document.removeEventListener('keydown', blockEscKey);
-                document.removeEventListener('keydown', blockRefresh);
-                
                 // Clear answers
                 for (let i = 0; i < progress.answers.length; i++) {
                     progress.answers[i] = null;
@@ -2976,7 +2946,7 @@ function showViolationSubmitScreen(message) {
 }
 
 // ============================================================
-// GREEN SUBMIT SCREEN - SAME TAB + AUTO-CLOSE + CLEAR HISTORY
+// GREEN SUBMIT SCREEN - WITH HISTORY CLEAR
 // ============================================================
 
 function showGreenSubmitScreen(fullUrl, answersData) {
@@ -3004,13 +2974,12 @@ function showGreenSubmitScreen(fullUrl, answersData) {
         text-align: center;
         padding: 20px;
         animation: fadeIn 0.5s ease;
-        cursor: default;
     `;
     
     overlay.innerHTML = `
         <div style="max-width: 600px; width: 100%;">
             <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
-            <div style="font-size: 32px; font-weight: bold; margin-bottom: 15px;">EXAM COMPLETE!</div>
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 15px;">EXAM COMPLETED!</div>
             <div style="font-size: 18px; margin-bottom: 10px; color: #d4edda;">
                 Your answers have been recorded.
             </div>
@@ -3032,64 +3001,47 @@ function showGreenSubmitScreen(fullUrl, answersData) {
             ">📤 SUBMIT</button>
             <div style="margin-top: 20px; font-size: 14px; color: #b7e4c7;">
                 Click the button above to submit your exam.
-                You cannot change your answers after submission.
             </div>
         </div>
     `;
     
+    // Add fade-in animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    `;
     document.head.appendChild(style);
+    
     document.body.appendChild(overlay);
     
-    // BLOCK ESC KEY
-    function blockEscKey(e) {
-        if (e.key === 'Escape' || e.keyCode === 27) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🔒 ESC key blocked');
-            return false;
-        }
-    }
-    
-    // BLOCK F5 REFRESH
-    function blockRefresh(e) {
-        if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.ctrlKey && e.shiftKey && e.key === 'r')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🔒 Refresh blocked');
-            return false;
-        }
-    }
-    
-    document.addEventListener('keydown', blockEscKey);
-    document.addEventListener('keydown', blockRefresh);
-    
-    // Add click handler for the submit button
+    // ============================================================
+    // ✅ THIS IS THE FIXED CLICK HANDLER
+    // ============================================================
     setTimeout(() => {
         const submitBtn = document.getElementById('greenSubmitBtn');
         if (submitBtn) {
             submitBtn.onclick = function() {
-                document.removeEventListener('keydown', blockEscKey);
-                document.removeEventListener('keydown', blockRefresh);
-                
                 console.log('✅ Student clicked SUBMIT on green screen');
                 
-                // ✅ CLEAR HISTORY BEFORE REDIRECT
-                history.replaceState(null, '', window.location.href);
+                // ✅ REPLACE CURRENT PAGE WITH FORM URL (CLEARS HISTORY)
+                window.location.replace(fullUrl);
                 
-                // ✅ REDIRECT TO GOOGLE FORM (SAME TAB)
-                window.location.href = fullUrl;
-                
-                // ✅ AFTER 3 SECONDS, REDIRECT BACK AND CLEAR HISTORY
+                // ✅ AFTER 3 SECONDS, REDIRECT BACK TO EXAM PAGE (CLEARS HISTORY)
                 setTimeout(function() {
-                    // This will run after Google Form submission
-                    // Redirect back to exam page with clear history
                     window.location.replace(window.location.origin + window.location.pathname + '?submitted=true');
                 }, 3000);
             };
         }
     }, 100);
 }
-// ===== SUBMIT WITH GREEN SCREEN (SAME TAB + CLEAR HISTORY) =====
+// ===== SUBMIT WITH GREEN SCREEN (NO UNLINK! STUDENT CLICKS SUBMIT) =====
 function submitWithWindowOpen(answersData) {
     return new Promise((resolve) => {
         const FORM_URL = GOOGLE_FORMS[assignedForm];
@@ -3144,7 +3096,7 @@ function submitWithWindowOpen(answersData) {
             
             const fullUrl = FORM_URL + '?' + params.toString();
             
-            // ✅ Show GREEN SUBMIT SCREEN
+            // ✅ Show GREEN SUBMIT SCREEN (instead of Google Form)
             showGreenSubmitScreen(fullUrl, answersData);
             
             // Save locally as backup
@@ -3160,6 +3112,7 @@ function submitWithWindowOpen(answersData) {
         }
     });
 }
+
 async function loadAnswerKey() {
     try {
         console.log("📥 LOADING ANSWER KEY FROM EXTERNAL FILE...");
