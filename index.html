@@ -5172,17 +5172,7 @@ async function submitToGoogleForms(answersData) {
         
         showToast('✅ Exam submitted successfully!', 'success', 3000);
         
-        localStorage.removeItem('hasViolations');
-        clearSavedExam();
-        return true;
-        
-    } catch (error) {
-        console.error("❌ Submission error:", error);
-        saveSubmissionLocally(answersData);
-        showToast('⚠️ Submission saved locally', 'warning', 3000);
-        return false;
-    }
-}
+       
         
         // Clear violation flag on successful submission
         localStorage.removeItem('hasViolations');
