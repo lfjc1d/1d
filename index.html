@@ -1443,7 +1443,8 @@ body.anti-sleep-active {
     margin: 0;
     padding: 16px 30px;
     min-height: calc(100vh - 140px);
-    flex-direction: row; 
+    flex-direction: row;
+}
 .exam-main {
     flex: 1;
     min-width: 0;
@@ -5249,17 +5250,7 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
         
-        // Clear violation flag on successful submission
-        localStorage.removeItem('hasViolations');
-        clearSavedExam();
-        return true;
-    } catch (error) {
-        console.error("❌ Submission error:", error);
-        saveSubmissionLocally(answersData);
-        showToast('⚠️ Submission saved locally', 'warning', 5000);
-        return false;
-    }
-}
+       
 
 function saveSubmissionLocally(answersData) {
     try {
